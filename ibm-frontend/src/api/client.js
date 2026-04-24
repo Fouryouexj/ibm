@@ -1,5 +1,5 @@
 // ─── Base config ─────────────────────────────────────────
-const BASE = "http://localhost:5000/api";
+const BASE = "https://ibmanager.co.ke/api";
 
 function getToken() {
   return localStorage.getItem("ibm_token");

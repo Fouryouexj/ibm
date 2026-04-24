@@ -158,6 +158,205 @@ function ErrMsg({ msg }) {
   return <div style={{ background: "#fee2e2", color: "#b91c1c", borderRadius: "8px", padding: "0.8rem 1rem", fontSize: "0.85rem", marginBottom: "1rem" }}>{msg}</div>;
 }
 
+// ═══════════════════════════════════════════════════════════
+//  APP MODALS  — defined OUTSIDE AppShell so React never
+//  remounts them on parent re-render (fixes input reset bug)
+// ═══════════════════════════════════════════════════════════
+function AppModals({ modal, form, setForm, formErr, closeModal, suppliers,
+                     onSubmitSale, onSubmitStock, onSubmitPolicy,
+                     onSubmitSupplier, onSubmitExpense, saving }) {
+
+  // Controlled field helper — reads from form, writes to form
+  const val  = k => form[k] ?? "";
+  const setF = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
+
+  if (!modal) return null;
+
+  if (modal === "addSale") return (
+    <Modal title="Record Rice Sale" onClose={closeModal}>
+      {formErr && <ErrMsg msg={formErr} />}
+      <Field label="Customer Name">
+        <input style={inp} placeholder="e.g. Jane Mwangi"
+          value={val("customer")} onChange={setF("customer")} />
+      </Field>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <Field label="Quantity (kg)">
+          <input style={inp} type="number" placeholder="25"
+            value={val("qty")} onChange={setF("qty")} />
+        </Field>
+        <Field label="Price per kg (KSh)">
+          <input style={inp} type="number" placeholder="120"
+            value={val("ppkg")} onChange={setF("ppkg")} />
+        </Field>
+      </div>
+      {form.qty && form.ppkg && (
+        <div style={{ background: "#f0fdf4", borderRadius: "8px", padding: "0.7rem 0.9rem", marginBottom: "1rem", fontWeight: 700, color: "#15803d", fontSize: "0.9rem", border: "1.5px solid #86efac" }}>
+          Total: {fmt(Number(form.qty) * Number(form.ppkg))}
+        </div>
+      )}
+      <Field label="Payment Method">
+        <select style={sel} value={val("method")} onChange={setF("method")}>
+          <option value="Cash">Cash</option>
+          <option value="M-Pesa">M-Pesa</option>
+        </select>
+      </Field>
+      <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+        <button style={btnS} onClick={closeModal}>Cancel</button>
+        <button style={{ ...btnP, opacity: saving ? 0.7 : 1 }} onClick={onSubmitSale} disabled={saving}>
+          {saving ? "Saving…" : "Save Sale"}
+        </button>
+      </div>
+    </Modal>
+  );
+
+  if (modal === "addStock") return (
+    <Modal title="Add Rice Stock" onClose={closeModal}>
+      {formErr && <ErrMsg msg={formErr} />}
+      <Field label="Supplier">
+        <select style={sel} value={val("supplier")} onChange={setF("supplier")}>
+          <option value="">Select supplier…</option>
+          {(suppliers || []).map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+          <option value="Other">Other</option>
+        </select>
+      </Field>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <Field label="Quantity (kg)">
+          <input style={inp} type="number" placeholder="200"
+            value={val("qty")} onChange={setF("qty")} />
+        </Field>
+        <Field label="Total Cost (KSh)">
+          <input style={inp} type="number" placeholder="22000"
+            value={val("cost")} onChange={setF("cost")} />
+        </Field>
+      </div>
+      {form.qty && form.cost && (
+        <div style={{ background: "#f9fafb", borderRadius: "8px", padding: "0.7rem 0.9rem", marginBottom: "1rem", fontSize: "0.82rem", color: "#6b7280", fontWeight: 600 }}>
+          Cost per kg: {fmt(Math.round(Number(form.cost) / Number(form.qty)))}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+        <button style={btnS} onClick={closeModal}>Cancel</button>
+        <button style={{ ...btnP, opacity: saving ? 0.7 : 1 }} onClick={onSubmitStock} disabled={saving}>
+          {saving ? "Saving…" : "Add Stock"}
+        </button>
+      </div>
+    </Modal>
+  );
+
+  if (modal === "addPolicy") return (
+    <Modal title="Add Insurance Policy" onClose={closeModal}>
+      {formErr && <ErrMsg msg={formErr} />}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <Field label="Client Name">
+          <input style={inp} placeholder="Full name"
+            value={val("client")} onChange={setF("client")} />
+        </Field>
+        <Field label="Phone Number">
+          <input style={inp} placeholder="07XX XXX XXX"
+            value={val("phone")} onChange={setF("phone")} />
+        </Field>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <Field label="KRA PIN">
+          <input style={inp} placeholder="A000000000Z"
+            value={val("kra_pin")} onChange={setF("kra_pin")} />
+        </Field>
+        <Field label="Vehicle Reg. No.">
+          <input style={inp} placeholder="KXX 000X"
+            value={val("vehicle")} onChange={setF("vehicle")} />
+        </Field>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <Field label="Insurance Company">
+          <input style={inp} placeholder="e.g. Jubilee"
+            value={val("insurer")} onChange={setF("insurer")} />
+        </Field>
+        <Field label="Premium (KSh)">
+          <input style={inp} type="number" placeholder="12500"
+            value={val("premium")} onChange={setF("premium")} />
+        </Field>
+      </div>
+      <Field label="Policy Expiry">
+        <input style={{ ...inp, colorScheme: "light" }} type="date"
+          value={val("expiry")} onChange={setF("expiry")} />
+      </Field>
+      {form.premium && (
+        <div style={{ background: "#f0fdf4", borderRadius: "8px", padding: "0.7rem 0.9rem", marginBottom: "1rem", fontWeight: 700, color: "#15803d", fontSize: "0.875rem", border: "1.5px solid #86efac" }}>
+          Your commission (10%): {fmt(Math.round(Number(form.premium) * 0.1))}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+        <button style={btnS} onClick={closeModal}>Cancel</button>
+        <button style={{ ...btnP, opacity: saving ? 0.7 : 1 }} onClick={onSubmitPolicy} disabled={saving}>
+          {saving ? "Saving…" : "Save Policy"}
+        </button>
+      </div>
+    </Modal>
+  );
+
+  if (modal === "addSupplier") return (
+    <Modal title="Add Supplier" onClose={closeModal}>
+      {formErr && <ErrMsg msg={formErr} />}
+      <Field label="Supplier Name">
+        <input style={inp} placeholder="Supplier name"
+          value={val("name")} onChange={setF("name")} />
+      </Field>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <Field label="Contact">
+          <input style={inp} placeholder="07XX XXX XXX"
+            value={val("contact")} onChange={setF("contact")} />
+        </Field>
+        <Field label="Location">
+          <input style={inp} placeholder="Town, County"
+            value={val("location")} onChange={setF("location")} />
+        </Field>
+      </div>
+      <Field label="Payment Terms">
+        <input style={inp} placeholder="e.g. Cash on delivery"
+          value={val("terms")} onChange={setF("terms")} />
+      </Field>
+      <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+        <button style={btnS} onClick={closeModal}>Cancel</button>
+        <button style={{ ...btnP, opacity: saving ? 0.7 : 1 }} onClick={onSubmitSupplier} disabled={saving}>
+          {saving ? "Saving…" : "Save Supplier"}
+        </button>
+      </div>
+    </Modal>
+  );
+
+  if (modal === "addExpense") return (
+    <Modal title="Record Expense" onClose={closeModal}>
+      {formErr && <ErrMsg msg={formErr} />}
+      <Field label="Description">
+        <input style={inp} placeholder="e.g. Transport"
+          value={val("description")} onChange={setF("description")} />
+      </Field>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <Field label="Amount (KSh)">
+          <input style={inp} type="number" placeholder="3500"
+            value={val("amount")} onChange={setF("amount")} />
+        </Field>
+        <Field label="Category">
+          <select style={sel} value={val("category") || "Operations"} onChange={setF("category")}>
+            <option value="Operations">Operations</option>
+            <option value="Stock">Stock</option>
+            <option value="Utilities">Utilities</option>
+            <option value="Other">Other</option>
+          </select>
+        </Field>
+      </div>
+      <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+        <button style={btnS} onClick={closeModal}>Cancel</button>
+        <button style={{ ...btnP, opacity: saving ? 0.7 : 1 }} onClick={onSubmitExpense} disabled={saving}>
+          {saving ? "Saving…" : "Save Expense"}
+        </button>
+      </div>
+    </Modal>
+  );
+
+  return null;
+}
+
 // ─── Login screen ─────────────────────────────────────────
 function LoginScreen() {
   const { login } = useAuth();
@@ -238,6 +437,7 @@ function AppShell() {
   const [riceTab,  setRiceTab]  = useState("stock");
   const [insTab,   setInsTab]   = useState("policies");
   const [sideOpen, setSideOpen] = useState(true);
+  const [saleFilter, setSaleFilter] = useState({ from: "", to: "", method: "" });
 
   // ── Modal ───────────────────────────────────────────────
   const [modal,    setModal]    = useState(null);
@@ -455,7 +655,6 @@ function AppShell() {
   //  PAGE: RICE
   // ════════════════════════════════════════════════════════
   function RiceModule() {
-    const [saleFilter, setSaleFilter] = useState({ from: "", to: "", method: "" });
     const { data: report } = useApi(() => api.rice.getReport("all"), []);
 
     const filteredSales = useMemo(() => {
@@ -832,119 +1031,6 @@ function AppShell() {
     );
   }
 
-  // ════════════════════════════════════════════════════════
-  //  MODALS
-  // ════════════════════════════════════════════════════════
-  function Modals() {
-    if (!modal) return null;
-    const saving = createSale.loading || addStock.loading || createPolicy.loading || createSupplier.loading || createExpense.loading;
-
-    if (modal === "addSale") return (
-      <Modal title="Record Rice Sale" onClose={closeModal}>
-        {formErr && <ErrMsg msg={formErr} />}
-        <Field label="Customer Name"><input style={inp} placeholder="e.g. Jane Mwangi" onChange={setF("customer")} /></Field>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-          <Field label="Quantity (kg)"><input style={inp} type="number" placeholder="25" onChange={setF("qty")} /></Field>
-          <Field label="Price per kg (KSh)"><input style={inp} type="number" placeholder="120" onChange={setF("ppkg")} /></Field>
-        </div>
-        {form.qty && form.ppkg && <div style={{ background: "#f0fdf4", borderRadius: "8px", padding: "0.7rem 0.9rem", marginBottom: "1rem", fontWeight: 700, color: "#15803d", fontSize: "0.9rem", border: "1.5px solid #86efac" }}>Total: {fmt(Number(form.qty) * Number(form.ppkg))}</div>}
-        <Field label="Payment Method">
-          <select style={sel} onChange={setF("method")}><option value="Cash">Cash</option><option value="M-Pesa">M-Pesa</option></select>
-        </Field>
-        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
-          <button style={btnS} onClick={closeModal}>Cancel</button>
-          <button style={{ ...btnP, opacity: saving ? 0.7 : 1 }} onClick={submitSale} disabled={saving}>{saving ? "Saving…" : "Save Sale"}</button>
-        </div>
-      </Modal>
-    );
-
-    if (modal === "addStock") return (
-      <Modal title="Add Rice Stock" onClose={closeModal}>
-        {formErr && <ErrMsg msg={formErr} />}
-        <Field label="Supplier">
-          <select style={sel} onChange={setF("supplier")}>
-            <option value="">Select supplier…</option>
-            {(suppliers || []).map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-            <option value="Other">Other</option>
-          </select>
-        </Field>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-          <Field label="Quantity (kg)"><input style={inp} type="number" placeholder="200" onChange={setF("qty")} /></Field>
-          <Field label="Total Cost (KSh)"><input style={inp} type="number" placeholder="22000" onChange={setF("cost")} /></Field>
-        </div>
-        {form.qty && form.cost && <div style={{ background: "#f9fafb", borderRadius: "8px", padding: "0.7rem 0.9rem", marginBottom: "1rem", fontSize: "0.82rem", color: "#6b7280", fontWeight: 600 }}>Cost per kg: {fmt(Math.round(Number(form.cost) / Number(form.qty)))}</div>}
-        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
-          <button style={btnS} onClick={closeModal}>Cancel</button>
-          <button style={{ ...btnP, opacity: saving ? 0.7 : 1 }} onClick={submitStock} disabled={saving}>{saving ? "Saving…" : "Add Stock"}</button>
-        </div>
-      </Modal>
-    );
-
-    if (modal === "addPolicy") return (
-      <Modal title="Add Insurance Policy" onClose={closeModal}>
-        {formErr && <ErrMsg msg={formErr} />}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-          <Field label="Client Name"><input style={inp} placeholder="Full name" onChange={setF("client")} /></Field>
-          <Field label="Phone Number"><input style={inp} placeholder="07XX XXX XXX" onChange={setF("phone")} /></Field>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-          <Field label="KRA PIN"><input style={inp} placeholder="A000000000Z" onChange={setF("kra_pin")} /></Field>
-          <Field label="Vehicle Reg. No."><input style={inp} placeholder="KXX 000X" onChange={setF("vehicle")} /></Field>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-          <Field label="Insurance Company"><input style={inp} placeholder="e.g. Jubilee" onChange={setF("insurer")} /></Field>
-          <Field label="Premium (KSh)"><input style={inp} type="number" placeholder="12500" onChange={setF("premium")} /></Field>
-        </div>
-        <Field label="Policy Expiry"><input style={{ ...inp, colorScheme: "light" }} type="date" onChange={setF("expiry")} /></Field>
-        {form.premium && <div style={{ background: "#f0fdf4", borderRadius: "8px", padding: "0.7rem 0.9rem", marginBottom: "1rem", fontWeight: 700, color: "#15803d", fontSize: "0.875rem", border: "1.5px solid #86efac" }}>Your commission (10%): {fmt(Math.round(Number(form.premium) * 0.1))}</div>}
-        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
-          <button style={btnS} onClick={closeModal}>Cancel</button>
-          <button style={{ ...btnP, opacity: saving ? 0.7 : 1 }} onClick={submitPolicy} disabled={saving}>{saving ? "Saving…" : "Save Policy"}</button>
-        </div>
-      </Modal>
-    );
-
-    if (modal === "addSupplier") return (
-      <Modal title="Add Supplier" onClose={closeModal}>
-        {formErr && <ErrMsg msg={formErr} />}
-        <Field label="Supplier Name"><input style={inp} placeholder="Supplier name" onChange={setF("name")} /></Field>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-          <Field label="Contact"><input style={inp} placeholder="07XX XXX XXX" onChange={setF("contact")} /></Field>
-          <Field label="Location"><input style={inp} placeholder="Town, County" onChange={setF("location")} /></Field>
-        </div>
-        <Field label="Payment Terms"><input style={inp} placeholder="e.g. Cash on delivery" onChange={setF("terms")} /></Field>
-        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
-          <button style={btnS} onClick={closeModal}>Cancel</button>
-          <button style={{ ...btnP, opacity: saving ? 0.7 : 1 }} onClick={submitSupplier} disabled={saving}>{saving ? "Saving…" : "Save Supplier"}</button>
-        </div>
-      </Modal>
-    );
-
-    if (modal === "addExpense") return (
-      <Modal title="Record Expense" onClose={closeModal}>
-        {formErr && <ErrMsg msg={formErr} />}
-        <Field label="Description"><input style={inp} placeholder="e.g. Transport" onChange={setF("description")} /></Field>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-          <Field label="Amount (KSh)"><input style={inp} type="number" placeholder="3500" onChange={setF("amount")} /></Field>
-          <Field label="Category">
-            <select style={sel} onChange={setF("category")}>
-              <option value="Operations">Operations</option>
-              <option value="Stock">Stock</option>
-              <option value="Utilities">Utilities</option>
-              <option value="Other">Other</option>
-            </select>
-          </Field>
-        </div>
-        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
-          <button style={btnS} onClick={closeModal}>Cancel</button>
-          <button style={{ ...btnP, opacity: saving ? 0.7 : 1 }} onClick={submitExpense} disabled={saving}>{saving ? "Saving…" : "Save Expense"}</button>
-        </div>
-      </Modal>
-    );
-
-    return null;
-  }
-
   const renderPage = () => {
     if (page === "dashboard")     return <Dashboard />;
     if (page === "rice")          return <RiceModule />;
@@ -1048,7 +1134,20 @@ function AppShell() {
         <div style={{ flex: 1, padding: "1.25rem 1.75rem 2rem" }}>{renderPage()}</div>
       </div>
 
-      <Modals />
+      <AppModals
+        modal={modal}
+        form={form}
+        setForm={setForm}
+        formErr={formErr}
+        closeModal={closeModal}
+        suppliers={suppliers}
+        onSubmitSale={submitSale}
+        onSubmitStock={submitStock}
+        onSubmitPolicy={submitPolicy}
+        onSubmitSupplier={submitSupplier}
+        onSubmitExpense={submitExpense}
+        saving={createSale.loading || addStock.loading || createPolicy.loading || createSupplier.loading || createExpense.loading}
+      />
     </div>
   );
 }
